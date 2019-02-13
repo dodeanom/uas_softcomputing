@@ -1,0 +1,104 @@
+# Dewa Gede Anom Atmaja 1401020045 - Teknik Informatika 
+# UAS Soft Computing 2019 - 13/2/2019 
+# STMIK Primakara 
+
+# Importing the libraries 
+import numpy as np 
+import matplotlib.pyplot as plt 
+import pandas as pd 
+
+# Importing the Keras libraries and packages 
+import keras 
+from keras.models import Sequential 
+from keras.layers import Dense 
+
+# Inisialisasi Algo NN 
+# ================================= 
+# Initialising the ANN 
+classifier = Sequential() 
+
+# Adding the input layer and the first hidden layer 
+classifier.add(Dense(output_dim = 6, init = 'uniform', activation = 'relu', input_dim = 11)) 
+
+# Adding the second hidden layer 
+classifier.add(Dense(output_dim = 6, init = 'uniform', activation = 'relu')) 
+
+# Adding the output layer 
+classifier.add(Dense(output_dim = 1, init = 'uniform', activation = 'sigmoid')) 
+
+# Compiling the ANN 
+classifier.compile(optimizer = 'adam', loss = 'binary_crossentropy', metrics = ['accuracy']) 
+# ========================================== 
+# END Inisialisasi Algo NN 
+
+# Impor dan memproses data 
+# ========================================== 
+# import file csv dengan library panda 
+# dataset yang diimport ini berisi data kustomer yang keluar dari bank karena beberapa alasan 
+dataset = pd.read_csv('/home/zeneight/Campus Materials/soft_computing/churn_modelling.csv') 
+
+#Ambil semua baris dan semua kolom kecuali 3 kolom awal (kolom index 0,1,2) dan kolom index 13 
+#3 kolom awal tidak diambil karena tidak ada hubungannya/berelasi  
+#dengan kustomer yang keluar dari bank 
+X = dataset.iloc[:, 3:-1].values 
+# Data X nanti berisi fitur2 nya atau independent variable 
+
+#ambil semua baris dan kolom terakhir (kolom index 13/kolom 14) 
+Y = dataset.iloc[:, 13].values 
+# Data Y akan berisi data prediksi atau dependent variable 
+
+#import 2 class dan inisialisasi ke dalam variabel untuk mengubah string ke dalam bentuk angka 
+from sklearn.preprocessing import OneHotEncoder, LabelEncoder 
+labelencoder_negara_X = LabelEncoder() 
+labelencoder_jkelamin_X = LabelEncoder() 
+
+#mengganti string negara pada kolom index 1 menjadi bentuk angka 
+#mengganti string jenis kelamin pada kolom index 2 menjadi bentuk angka 
+X[:, 1] = labelencoder_negara_X.fit_transform(X[:, 1]) 
+X[:, 2] = labelencoder_jkelamin_X.fit_transform(X[:, 2]) 
+
+#mengganti angka menjadi bentuk binary dengan class ONeHotEncoder 
+ohe = OneHotEncoder(categorical_features = [1]) 
+X = ohe.fit_transform(X).toarray() 
+
+#buang data pada kolom index 0 supaya tidak banyak mengambil data 
+X = X[:, 1:] 
+
+#men-split data ke dalam 4 variabel, 2 variabel untuk data training dan 2 variabel untuk data testing 
+from sklearn.model_selection import train_test_split 
+X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.2, random_state=0) 
+
+#scaling data 
+from sklearn.preprocessing import StandardScaler 
+sc = StandardScaler() 
+X_train = sc.fit_transform(X_train) 
+X_test = sc.transform(X_test) 
+# ======================================== 
+# END Impor dan memproses data 
+
+# Training data supaya dia pintar 
+# ======================================== 
+# Fitting the ANN to the Training set 
+# latih data sampai iterasi ke 100 
+classifier.fit(X_train, y_train, batch_size = 10, nb_epoch = 100) 
+# ======================================== 
+
+# Memprediksi hasil tes 
+# ======================================== 
+# Predicting the Test set results 
+# prediksi jika y_pred lebih besar dari 0.5 maka akan menghasilkan 
+# true jika nilainya 1 dan false jika nilainya 2 
+y_pred = classifier.predict(X_test) 
+y_pred = (y_pred > 0.5) 
+
+# ======================================== 
+# sampai tahap di atas sebenernya sudah dapat hasil akhirnya berupa true atau false 
+# Kita sudah dapat hasil yang digunakan untuk memprediksi kustomer yang nanti 
+# keliatannya akan keluar dari Bank tersebut 
+
+# Membuat Matriks Confusion untuk melihat error apa saja yang dibuat 
+# setelah melakukan prediksi tadi 
+# ======================================== 
+# Making the Confusion Matrix 
+from sklearn.metrics import confusion_matrix 
+cm = confusion_matrix(y_test, y_pred) 
